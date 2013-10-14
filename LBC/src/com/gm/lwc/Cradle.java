@@ -34,26 +34,6 @@ public class Cradle {
 		}
 	}
 
-	public static class Halt extends Exception {
-
-		public Halt() {
-			super();
-		}
-
-		public Halt(String arg0, Throwable arg1) {
-			super(arg0, arg1);
-		}
-
-		public Halt(String arg0) {
-			super(arg0);
-		}
-
-		public Halt(Throwable arg0) {
-			super(arg0);
-		}
-
-	}
-
 	private Reader in;
 	private PrintWriter out;
 	private PrintWriter err;
@@ -67,16 +47,16 @@ public class Cradle {
 		out.write(m);
 	}
 
-	public void abort(String s) throws IOException, Halt {
+	public void abort(String s) throws IOException {
 		error(s);
-		throw new Halt(s);
+		System.exit(-1);
 	}
 
-	public void expected(String s) throws IOException, Halt {
+	public void expected(String s) throws IOException {
 		abort("Expected " + s);
 	}
 
-	public void match(int chr) throws IOException, Halt {
+	public void match(int chr) throws IOException {
 		if (look == chr)
 			getChar();
 		else
@@ -91,7 +71,7 @@ public class Cradle {
 		return c >= 48 && c <= 57;
 	}
 
-	public int getName() throws IOException, Halt {
+	public int getName() throws IOException {
 		if (!isAlpha(look))
 			expected("Name");
 		int l = look;
@@ -99,7 +79,7 @@ public class Cradle {
 		return l;
 	}
 
-	public int getNum() throws IOException, Halt {
+	public int getNum() throws IOException {
 		if (!isDigit(look))
 			expected("Integer");
 		int l = look;
