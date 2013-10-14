@@ -21,16 +21,20 @@ public class Cradle {
 	}
 
 	public static enum Cons {
-		TAB("\t");
+		TAB(9), LF(10);
 
-		private String v;
+		private int v;
 
-		private Cons(String c) {
+		private Cons(int c) {
 			this.v = c;
 		}
 
-		public String getValue() {
+		public int val() {
 			return v;
+		}
+
+		public String str() {
+			return new String(new char[] { (char) v });
 		}
 	}
 
@@ -44,7 +48,8 @@ public class Cradle {
 	}
 
 	public void error(String m) throws IOException {
-		out.write(m);
+		err.write(m);
+		err.flush();
 	}
 
 	public void abort(String s) throws IOException {
@@ -88,12 +93,13 @@ public class Cradle {
 	}
 
 	public String emit(String s) throws IOException {
-		s = Cons.TAB + s;
-		out.write(s);
+		s = Cons.TAB.str() + s;
+		out.print(s);
+		out.flush();
 		return s;
 	}
 
-	public String emitLn(String s) throws IOException {
+	public String emitln(String s) throws IOException {
 		s = emit(s);
 		out.println();
 		return s;
@@ -103,9 +109,15 @@ public class Cradle {
 		getChar();
 	}
 
+	public void expression() throws IOException {
+		emitln("MOVE #" + getNum() + ", D0");
+	}
+
 	public static void main(String[] args) {
 		try {
-			new Cradle().init();
+			Cradle c = new Cradle();
+			c.init();
+			c.expression();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
