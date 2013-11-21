@@ -6,6 +6,9 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 public class Cradle {
 
@@ -20,32 +23,22 @@ public class Cradle {
 		this.err = new PrintWriter(err);
 	}
 
-	public static enum Cons {
-		TAB(9), PLUS(43), MINUS(45);
-
-		private int v;
-
-		private Cons(int c) {
-			this.v = c;
-		}
-
-		public int val() {
-			return v;
-		}
-
-		public String str() {
-			return new String(new char[] { (char) v });
-		}
-	}
+	public static final char TAB = '	';
+	public static final char PLUS = '+';
+	public static final char MINUS = '-';
+	public static final char MULT = '*';
+	public static final char DIV = '/';
+	public static final char LPAR = '(';
+	public static final char RPAR = ')';
 
 	private Reader in;
 	private PrintWriter out;
 	private PrintWriter err;
-	private int look;
+	private char look;
 
 	public void getChar() {
 		try {
-			look = in.read();
+			look = (char) in.read();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -97,7 +90,7 @@ public class Cradle {
 	}
 
 	public String emit(String s) {
-		s = Cons.TAB.str() + s;
+		s = TAB + s;
 		out.print(s);
 		out.flush();
 		return s;
@@ -113,34 +106,73 @@ public class Cradle {
 		getChar();
 	}
 
+	public void factor() {
+		if (look == LPAR) {
+			match(LPAR);
+			expression();
+			match(RPAR);
+		} else
+			emitln("MOVE #" + getNum() + ",D0");
+	}
+
+	public void mult() {
+		match(MULT);
+		factor();
+		emitln("MULS (SP)+,D0");
+	}
+
+	public void div() {
+		match(DIV);
+		factor();
+		emitln("MOVE (SP)+,D1");
+		emitln("DIVS D1,D0");
+	}
+
 	public void term() {
-		emitln("MOVE #" + getNum() + ", D0");
+		factor();
+		while (Arrays.asList(MULT, DIV).contains(look)) {
+			emitln("MOVE D0,-(SP)");
+			switch (look) {
+			case MULT:
+				mult();
+				break;
+			case DIV:
+				div();
+				break;
+			default:
+				expected("Mulop");
+			}
+		}
 	}
 
 	public void add() {
-		match(Cons.PLUS.val());
+		match(PLUS);
 		term();
-		emitln("ADD D1,D0");
+		emitln("ADD (SP)+,D0");
 	}
 
 	public void sub() {
-		match(Cons.MINUS.val());
+		match(MINUS);
 		term();
-		emitln("SUB D1,D0");
+		emitln("SUB (SP)+,D0");
 		emitln("NEG D0");
 	}
 
 	public void expression() {
 		term();
-		emitln("MOVE D0,D1");
-		if (look == Cons.PLUS.val())
-			add();
-
-		else if (look == Cons.MINUS.val())
-			sub();
-
-		else
-			expected("Addop");
+		while (Arrays.asList(PLUS, MINUS).contains(look)) {
+			emitln("MOVE D0,-(SP)");
+			switch (look) {
+			case PLUS:
+				add();
+				break;
+			case MINUS:
+				sub();
+				break;
+			default:
+				expected("Addop");
+			}
+		}
 	}
 
 	public static void main(String[] args) {
